@@ -5,66 +5,13 @@ export async function initHistory(slug) {
   const container = document.getElementById('ls-history');
   const key = `history:${slug}`;
 
-  await renderHistory(container, key);
+  await renderHistory(container, key, slug);
   setupAutoSnapshot(slug, key, container);
 }
 
-async function renderHistory(container, key) {
+async function renderHistory(container, key, slug) {
   const history = (await storage.get(key)) || [];
 
-  if (history.length === 0) {
-    container.innerHTML = `
-      <div class="ls-empty">
-        <span class="ls-empty-icon">◈</span>
-        No snapshots yet.<br>
-        Snapshots save automatically<br>when you run or submit.
-      </div>
-      <div style="margin-top:12px; text-align:center">
-        <button class="ls-btn ls-btn-purple" id="ls-snap-btn">⊕ Save snapshot now</button>
-      </div>
-    `;
-  } else {
-    container.innerHTML = `
-      <div id="ls-history-list"></div>
-      <div style="margin-top:10px; text-align:center">
-        <button class="ls-btn ls-btn-purple" id="ls-snap-btn">⊕ Save snapshot</button>
-      </div>
-    `;
-    const list = document.getElementById('ls-history-list');
-    // Show newest first
-    [...history].reverse().forEach((snap, i) => {
-    const realIndex = history.length - 1 - i;
-    const div = document.createElement('div');
-    div.className = 'ls-snap-item';
-    const preview = snap.code.slice(0, 120);
-    const isTruncated = snap.code.length > 120;
-    div.innerHTML = `
-        <div class="ls-snap-header">
-        <span class="ls-snap-num">#${realIndex + 1}</span>
-        <span class="ls-snap-time">${formatTime(snap.timestamp)}</span>
-        <span class="ls-snap-lines">${snap.code.split('\n').length} lines</span>
-        <button class="ls-snap-expand" data-index="${realIndex}">expand ↓</button>
-        </div>
-        <pre class="ls-snap-preview" id="ls-snap-preview-${realIndex}">${escapeHtml(preview)}${isTruncated ? '...' : ''}</pre>
-        <div class="ls-snap-full" id="ls-snap-full-${realIndex}" style="display:none">
-        <pre class="ls-snap-full-code">${escapeHtml(snap.code)}</pre>
-        </div>
-    `;
-    list.appendChild(div);
-
-    // Expand/collapse toggle
-    div.querySelector('.ls-snap-expand').addEventListener('click', (e) => {
-        const full = document.getElementById(`ls-snap-full-${realIndex}`);
-        const preview2 = document.getElementById(`ls-snap-preview-${realIndex}`);
-        const isOpen = full.style.display !== 'none';
-        full.style.display = isOpen ? 'none' : 'block';
-        preview2.style.display = isOpen ? 'block' : 'none';
-        e.target.textContent = isOpen ? 'expand ↓' : 'collapse ↑';
-    });
-    });
-  }
-
-  // Inject styles once
   if (!document.getElementById('ls-history-style')) {
     const style = document.createElement('style');
     style.id = 'ls-history-style';
@@ -95,6 +42,21 @@ async function renderHistory(container, key) {
         border-radius: 4px;
         border: 1px solid rgba(0,212,255,0.1);
       }
+      .ls-snap-expand {
+        background: none;
+        border: 1px solid rgba(0,212,255,0.15);
+        color: rgba(0,212,255,0.5);
+        font-size: 10px;
+        font-family: 'JetBrains Mono', monospace;
+        padding: 2px 7px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .ls-snap-expand:hover {
+        color: #00D4FF;
+        border-color: rgba(0,212,255,0.4);
+      }
       .ls-snap-preview {
         font-family: 'JetBrains Mono', monospace;
         font-size: 10px;
@@ -106,75 +68,163 @@ async function renderHistory(container, key) {
         border-left: 2px solid rgba(123,97,255,0.3);
         padding-left: 8px;
       }
-        .ls-snap-expand {
-    background: none;
-    border: 1px solid rgba(0,212,255,0.15);
-    color: rgba(0,212,255,0.5);
-    font-size: 10px;
-    font-family: 'JetBrains Mono', monospace;
-    padding: 2px 7px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-left: auto;
-    transition: all 0.15s;
-    }
-    .ls-snap-expand:hover {
-    color: #00D4FF;
-    border-color: rgba(0,212,255,0.4);
-    }
-    .ls-snap-full-code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: rgba(200,214,229,0.7);
-    margin: 8px 0 0;
-    white-space: pre-wrap;
-    word-break: break-all;
-    line-height: 1.6;
-    border-left: 2px solid rgba(0,212,255,0.3);
-    padding-left: 8px;
-    max-height: 300px;
-    overflow-y: auto;
-    }
+      .ls-snap-full-code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: rgba(200,214,229,0.7);
+        margin: 8px 0 0;
+        white-space: pre-wrap;
+        word-break: break-all;
+        line-height: 1.6;
+        border-left: 2px solid rgba(0,212,255,0.3);
+        padding-left: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .ls-snap-tag {
+        font-size: 9px;
+        font-family: 'JetBrains Mono', monospace;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: rgba(0,212,255,0.08);
+        color: rgba(0,212,255,0.5);
+        border: 1px solid rgba(0,212,255,0.15);
+      }
+      .ls-snap-tag.auto {
+        background: rgba(123,97,255,0.08);
+        color: rgba(123,97,255,0.6);
+        border-color: rgba(123,97,255,0.2);
+      }
     `;
     document.head.appendChild(style);
   }
 
-  // Snap button
-    document.getElementById('ls-snap-btn').addEventListener('click', async () => {
-    const code = await getEditorCode();  // add await
-    if (!code || !code.trim()) {
-        document.getElementById('ls-snap-btn').textContent = '⚠ Editor empty';
-        setTimeout(() => document.getElementById('ls-snap-btn').textContent = '⊕ Save snapshot', 2000);
-        return;
-    }
-    const key2 = `history:${getProblemSlug()}`;
-    const existing = (await storage.get(key2)) || [];
-    existing.push({ code, timestamp: Date.now() });
-    await storage.set(key2, existing);
-    renderHistory(container, key2);
+  if (history.length === 0) {
+    container.innerHTML = `
+      <div class="ls-empty">
+        <span class="ls-empty-icon">◈</span>
+        No snapshots yet.<br>
+        Auto-saves on Submit,<br>or save manually below.
+      </div>
+      <div style="margin-top:12px; text-align:center">
+        <button class="ls-btn ls-btn-purple" id="ls-snap-btn">⊕ Save snapshot</button>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div id="ls-history-list"></div>
+      <div style="margin-top:10px; text-align:center">
+        <button class="ls-btn ls-btn-purple" id="ls-snap-btn">⊕ Save snapshot</button>
+      </div>
+    `;
+
+    const list = document.getElementById('ls-history-list');
+    [...history].reverse().forEach((snap, i) => {
+      const realIndex = history.length - 1 - i;
+      const div = document.createElement('div');
+      div.className = 'ls-snap-item';
+
+      const preview = snap.code.slice(0, 120);
+      const isTruncated = snap.code.length > 120;
+      const lineCount = snap.code.split('\n').length;
+      const tagHtml = snap.auto
+        ? `<span class="ls-snap-tag auto">auto</span>`
+        : `<span class="ls-snap-tag">manual</span>`;
+
+      div.innerHTML = `
+        <div class="ls-snap-header">
+          <span class="ls-snap-num">#${realIndex + 1}</span>
+          <span class="ls-snap-time">${formatTime(snap.timestamp)}</span>
+          ${tagHtml}
+          <span class="ls-snap-lines">${lineCount} lines</span>
+          <button class="ls-snap-expand">expand ↓</button>
+        </div>
+        <pre class="ls-snap-preview" id="ls-snap-preview-${realIndex}">${escapeHtml(preview)}${isTruncated ? '...' : ''}</pre>
+        <div id="ls-snap-full-${realIndex}" style="display:none">
+          <pre class="ls-snap-full-code">${escapeHtml(snap.code)}</pre>
+        </div>
+      `;
+
+      list.appendChild(div);
+
+      div.querySelector('.ls-snap-expand').addEventListener('click', (e) => {
+        const full = document.getElementById(`ls-snap-full-${realIndex}`);
+        const prev = document.getElementById(`ls-snap-preview-${realIndex}`);
+        const isOpen = full.style.display !== 'none';
+        full.style.display = isOpen ? 'none' : 'block';
+        prev.style.display = isOpen ? 'block' : 'none';
+        e.target.textContent = isOpen ? 'expand ↓' : 'collapse ↑';
+      });
     });
+  }
+
+  // Manual snap button
+  document.getElementById('ls-snap-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('ls-snap-btn');
+    const code = await getEditorCode();
+    if (!code || !code.trim()) {
+      btn.textContent = '⚠ Editor empty';
+      setTimeout(() => { btn.textContent = '⊕ Save snapshot'; }, 2000);
+      return;
+    }
+    await saveSnapshot(key, code, false);
+    await renderHistory(container, key, slug);
+  });
+}
+
+async function saveSnapshot(key, code, auto = false) {
+  const existing = (await storage.get(key)) || [];
+  // Avoid duplicates within 5 seconds
+  const last = existing[existing.length - 1];
+  if (last && Date.now() - last.timestamp < 5000 && last.code === code) return;
+  existing.push({ code, timestamp: Date.now(), auto });
+  await storage.set(key, existing);
+
+  // Track daily stats for heatmap
+  await trackDailyStat();
+}
+
+async function trackDailyStat() {
+  const today = new Date().toISOString().slice(0, 10); // "2026-06-10"
+  const statsKey = `stats:${today}`;
+  const count = (await storage.get(statsKey)) || 0;
+  await storage.set(statsKey, count + 1);
 }
 
 function setupAutoSnapshot(slug, key, container) {
-  // Watch for LeetCode's Run / Submit buttons
-  const observer = new MutationObserver(() => {
-    const submitting = document.querySelector('[data-e2e-locator="console-submit-button"]');
-    if (submitting && !submitting.dataset.lsWatched) {
-      submitting.dataset.lsWatched = '1';
-      submitting.addEventListener('click', async () => {
-        const code = getEditorCode();
-        if (!code || !code.trim()) return;
-        const existing = (await storage.get(key)) || [];
-        // Avoid duplicate snapshots within 5 seconds
-        const last = existing[existing.length - 1];
-        if (last && Date.now() - last.timestamp < 5000) return;
-        existing.push({ code, timestamp: Date.now() });
-        await storage.set(key, existing);
-        renderHistory(container, key);
+  // Poll for submit button — more reliable than MutationObserver on LeetCode
+  let watchedBtn = null;
+
+  const interval = setInterval(() => {
+    // LeetCode's submit button selector
+    const submitBtn = document.querySelector('[data-e2e-locator="console-submit-button"]')
+      || document.querySelector('button[class*="submit"]');
+
+    if (submitBtn && submitBtn !== watchedBtn) {
+      watchedBtn = submitBtn;
+      submitBtn.addEventListener('click', async () => {
+        // Small delay to let LeetCode register the submission
+        setTimeout(async () => {
+          const code = await getEditorCode();
+          if (!code || !code.trim()) return;
+          await saveSnapshot(key, code, true);
+          await renderHistory(container, key, slug);
+        }, 500);
       });
     }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  }, 2000);
+
+  // Clean up interval when panel is removed
+  const panel = document.getElementById('leetsense-panel');
+  if (panel) {
+    const observer = new MutationObserver(() => {
+      if (!document.getElementById('leetsense-panel')) {
+        clearInterval(interval);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true });
+  }
 }
 
 function formatTime(ts) {
@@ -184,5 +234,8 @@ function formatTime(ts) {
 }
 
 function escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
