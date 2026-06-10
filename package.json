@@ -1,0 +1,17 @@
+{
+  "name": "lc_enhancer",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack --watch"
+  },
+  "devDependencies": {
+    "copy-webpack-plugin": "...",
+    "css-loader": "...",
+    "dotenv": "...",
+    "sharp": "...",
+    "style-loader": "...",
+    "webpack": "...",
+    "webpack-cli": "..."
+  }
+}
