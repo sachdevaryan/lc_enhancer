@@ -34,4 +34,10 @@ module.exports = {
       'process.env.GROQ_API_KEY': JSON.stringify(process.env.GROQ_API_KEY),
     }),
   ],
+  entry: {
+    content: './src/content/index.js',
+    content_bridge: './src/content/bridge.js',
+    background: './src/background/index.js',
+    popup: './src/popup/index.js',
+  },
 };

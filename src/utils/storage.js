@@ -1,19 +1,22 @@
+function bridgeRequest(eventName, responseEvent, detail) {
+  return new Promise((resolve) => {
+    const requestId = `${Date.now()}_${Math.random()}`;
+    window.addEventListener(`${responseEvent}_${requestId}`, (e) => {
+      resolve(e.detail);
+    }, { once: true });
+    window.dispatchEvent(new CustomEvent(eventName, {
+      detail: { ...detail, requestId }
+    }));
+    setTimeout(() => resolve(null), 3000);
+  });
+}
+
 export const storage = {
   async get(key) {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(key, (result) => resolve(result[key] ?? null));
-    });
+    const res = await bridgeRequest('ls_storage_get', 'ls_storage_response', { key });
+    return res?.value ?? null;
   },
-
   async set(key, value) {
-    return new Promise((resolve) => {
-      chrome.storage.local.set({ [key]: value }, resolve);
-    });
-  },
-
-  async remove(key) {
-    return new Promise((resolve) => {
-      chrome.storage.local.remove(key, resolve);
-    });
+    await bridgeRequest('ls_storage_set', 'ls_storage_response', { key, value });
   }
 };
