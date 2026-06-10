@@ -71,7 +71,8 @@ function calcWeekCount(statsMap) {
 function dateStr(base, offsetDays) {
   const d = new Date(base);
   d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().slice(0, 10);
 }
 
 function renderStats(total, streak, week, snapshots) {

@@ -1,5 +1,6 @@
 import { storage } from '../utils/storage.js';
 import { getEditorCode, getProblemSlug } from '../utils/leetcode.js';
+import { diffLines } from '../utils/diff.js';
 
 export async function initHistory(slug) {
   const container = document.getElementById('ls-history');
@@ -118,44 +119,98 @@ async function renderHistory(container, key, slug) {
       </div>
     `;
 
-    const list = document.getElementById('ls-history-list');
-    [...history].reverse().forEach((snap, i) => {
-      const realIndex = history.length - 1 - i;
-      const div = document.createElement('div');
-      div.className = 'ls-snap-item';
+  const list = container.querySelector('#ls-history-list');
+  let selectedForDiff = [];
 
-      const preview = snap.code.slice(0, 120);
-      const isTruncated = snap.code.length > 120;
-      const lineCount = snap.code.split('\n').length;
-      const tagHtml = snap.auto
-        ? `<span class="ls-snap-tag auto">auto</span>`
-        : `<span class="ls-snap-tag">manual</span>`;
+  [...history].reverse().forEach((snap, i) => {
+    const realIndex = history.length - 1 - i;
+    const div = document.createElement('div');
+    div.className = 'ls-snap-item';
 
-      div.innerHTML = `
-        <div class="ls-snap-header">
-          <span class="ls-snap-num">#${realIndex + 1}</span>
-          <span class="ls-snap-time">${formatTime(snap.timestamp)}</span>
-          ${tagHtml}
-          <span class="ls-snap-lines">${lineCount} lines</span>
-          <button class="ls-snap-expand">expand ↓</button>
-        </div>
-        <pre class="ls-snap-preview" id="ls-snap-preview-${realIndex}">${escapeHtml(preview)}${isTruncated ? '...' : ''}</pre>
-        <div id="ls-snap-full-${realIndex}" style="display:none">
-          <pre class="ls-snap-full-code">${escapeHtml(snap.code)}</pre>
-        </div>
-      `;
+    const preview = snap.code.slice(0, 120);
+    const isTruncated = snap.code.length > 120;
+    const lineCount = snap.code.split('\n').length;
+    const tagHtml = snap.auto
+      ? `<span class="ls-snap-tag auto">auto</span>`
+      : `<span class="ls-snap-tag">manual</span>`;
 
-      list.appendChild(div);
+    div.innerHTML = `
+      <div class="ls-snap-header">
+        <input type="checkbox" class="ls-snap-check" data-index="${realIndex}" title="Select for diff">
+        <span class="ls-snap-num">#${realIndex + 1}</span>
+        <span class="ls-snap-time">${formatTime(snap.timestamp)}</span>
+        ${tagHtml}
+        <span class="ls-snap-lines">${lineCount} lines</span>
+        <button class="ls-snap-expand">expand ↓</button>
+      </div>
+      <pre class="ls-snap-preview" id="ls-snap-preview-${realIndex}">${escapeHtml(preview)}${isTruncated ? '...' : ''}</pre>
+      <div id="ls-snap-full-${realIndex}" style="display:none">
+        <pre class="ls-snap-full-code">${escapeHtml(snap.code)}</pre>
+      </div>
+    `;
 
-      div.querySelector('.ls-snap-expand').addEventListener('click', (e) => {
-        const full = document.getElementById(`ls-snap-full-${realIndex}`);
-        const prev = document.getElementById(`ls-snap-preview-${realIndex}`);
-        const isOpen = full.style.display !== 'none';
-        full.style.display = isOpen ? 'none' : 'block';
-        prev.style.display = isOpen ? 'block' : 'none';
-        e.target.textContent = isOpen ? 'expand ↓' : 'collapse ↑';
-      });
+    list.appendChild(div);
+
+    // Expand/collapse
+    div.querySelector('.ls-snap-expand').addEventListener('click', (e) => {
+      const full = document.getElementById(`ls-snap-full-${realIndex}`);
+      const prev = document.getElementById(`ls-snap-preview-${realIndex}`);
+      const isOpen = full.style.display !== 'none';
+      full.style.display = isOpen ? 'none' : 'block';
+      prev.style.display = isOpen ? 'block' : 'none';
+      e.target.textContent = isOpen ? 'expand ↓' : 'collapse ↑';
     });
+
+    // Diff checkbox
+    div.querySelector('.ls-snap-check').addEventListener('change', (e) => {
+      const idx = parseInt(e.target.dataset.index);
+      if (e.target.checked) {
+        if (selectedForDiff.length >= 2) {
+          e.target.checked = false;
+          return;
+        }
+        selectedForDiff.push(idx);
+      } else {
+        selectedForDiff = selectedForDiff.filter(x => x !== idx);
+      }
+
+      const diffBtn = document.getElementById('ls-diff-btn');
+      if (diffBtn) {
+        diffBtn.style.display = selectedForDiff.length === 2 ? 'inline-flex' : 'none';
+      }
+    });
+  });
+
+  // Add diff button after list (hidden until 2 selected)
+  list.insertAdjacentHTML('afterend', `
+    <div style="text-align:center; margin-top:8px">
+      <button class="ls-btn" id="ls-diff-btn" style="display:none; width:100%">
+        ⟺ diff selected snapshots
+      </button>
+    </div>
+  `);
+
+  // Add checkbox style
+  const checkStyle = document.createElement('style');
+  if (!document.getElementById('ls-check-style')) {
+    checkStyle.id = 'ls-check-style';
+    checkStyle.textContent = `
+      .ls-snap-check {
+        accent-color: #7B61FF;
+        width: 12px;
+        height: 12px;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+    `;
+    document.head.appendChild(checkStyle);
+  }
+
+  document.getElementById('ls-diff-btn')?.addEventListener('click', () => {
+    if (selectedForDiff.length !== 2) return;
+    const [a, b] = selectedForDiff.sort((x, y) => x - y);
+    showDiffModal(history[a], history[b], a, b);
+  });
   }
 
   // Manual snap button
@@ -185,7 +240,9 @@ async function saveSnapshot(key, code, auto = false) {
 }
 
 async function trackDailyStat() {
-  const today = new Date().toISOString().slice(0, 10); // "2026-06-10"
+  const d = new Date();
+  const offset = d.getTimezoneOffset() * 60000;
+  const today = new Date(d.getTime() - offset).toISOString().slice(0, 10);
   const statsKey = `stats:${today}`;
   const count = (await storage.get(statsKey)) || 0;
   await storage.set(statsKey, count + 1);
@@ -238,4 +295,149 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+export function showDiffModal(snapA, snapB, indexA, indexB) {
+  // Remove existing modal
+  document.getElementById('ls-diff-modal')?.remove();
+
+  const diff = diffLines(snapA.code, snapB.code);
+
+  const modal = document.createElement('div');
+  modal.id = 'ls-diff-modal';
+
+  const diffHtml = diff.map(d => {
+    if (d.type === 'same') {
+      return `<div class="diff-same"> ${escapeHtml(d.line)}</div>`;
+    } else if (d.type === 'added') {
+      return `<div class="diff-added">+${escapeHtml(d.line)}</div>`;
+    } else {
+      return `<div class="diff-removed">-${escapeHtml(d.line)}</div>`;
+    }
+  }).join('');
+
+  modal.innerHTML = `
+    <div id="ls-diff-inner">
+      <div id="ls-diff-header">
+        <span id="ls-diff-title">
+          diff <span style="color:#7B61FF">#${indexA + 1}</span>
+          <span style="color:rgba(200,214,229,0.3)">→</span>
+          <span style="color:#00D4FF">#${indexB + 1}</span>
+        </span>
+        <button id="ls-diff-close">✕ close</button>
+      </div>
+      <div id="ls-diff-stats">
+        <span class="diff-stat-add">+${diff.filter(d => d.type === 'added').length} added</span>
+        <span class="diff-stat-rem">-${diff.filter(d => d.type === 'removed').length} removed</span>
+        <span class="diff-stat-same">${diff.filter(d => d.type === 'same').length} unchanged</span>
+      </div>
+      <div id="ls-diff-body">${diffHtml}</div>
+    </div>
+  `;
+
+  const style = document.createElement('style');
+  style.id = 'ls-diff-style';
+  if (!document.getElementById('ls-diff-style')) {
+    style.textContent = `
+      #ls-diff-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+      #ls-diff-inner {
+        width: 640px;
+        max-width: 90vw;
+        max-height: 80vh;
+        background: #080B14;
+        border: 1px solid rgba(0,212,255,0.2);
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 40px rgba(0,212,255,0.05);
+      }
+      #ls-diff-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(0,212,255,0.08);
+        background: rgba(0,0,0,0.3);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px;
+        font-weight: 600;
+        color: #c8d6e5;
+      }
+      #ls-diff-close {
+        background: none;
+        border: 1px solid rgba(255,75,75,0.2);
+        color: rgba(255,75,75,0.6);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      #ls-diff-close:hover {
+        background: rgba(255,75,75,0.1);
+        color: #FF4B4B;
+        border-color: rgba(255,75,75,0.5);
+      }
+      #ls-diff-stats {
+        display: flex;
+        gap: 16px;
+        padding: 8px 16px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        border-bottom: 1px solid rgba(0,212,255,0.06);
+        background: rgba(0,0,0,0.2);
+      }
+      .diff-stat-add { color: #22c55e; }
+      .diff-stat-rem { color: #FF4B4B; }
+      .diff-stat-same { color: rgba(200,214,229,0.3); }
+      #ls-diff-body {
+        overflow-y: auto;
+        padding: 8px 0;
+        flex: 1;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        line-height: 1.6;
+      }
+      #ls-diff-body::-webkit-scrollbar { width: 4px; }
+      #ls-diff-body::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 2px; }
+      .diff-same {
+        padding: 1px 16px;
+        color: rgba(200,214,229,0.4);
+        white-space: pre;
+      }
+      .diff-added {
+        padding: 1px 16px;
+        background: rgba(34,197,94,0.08);
+        border-left: 3px solid #22c55e;
+        color: #22c55e;
+        white-space: pre;
+      }
+      .diff-removed {
+        padding: 1px 16px;
+        background: rgba(255,75,75,0.08);
+        border-left: 3px solid #FF4B4B;
+        color: #FF4B4B;
+        white-space: pre;
+        text-decoration: line-through;
+        opacity: 0.7;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(modal);
+
+  document.getElementById('ls-diff-close').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
 }
