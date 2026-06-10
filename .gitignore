@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+package-lock.json
+package.json
+
+# Build output
+dist/
+
+# Environment variables (never commit your API key)
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+npm-debug.log*
+*.log
