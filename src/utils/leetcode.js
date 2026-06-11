@@ -28,3 +28,25 @@ export function getEditorCode() {
     resolve(null);
   });
 }
+
+export function getEditorLanguageExtension() {
+  try {
+    const editors = window.monaco?.editor?.getEditors?.() || [];
+    for (const ed of editors) {
+      const val = ed.getValue?.();
+      if (val && val.trim().length > 0) {
+        const lang = ed.getModel?.()?.getLanguageId?.();
+        const map = {
+          'python': 'py', 'python3': 'py',
+          'javascript': 'js', 'typescript': 'ts',
+          'java': 'java', 'csharp': 'cs', 'cpp': 'cpp', 'c': 'c',
+          'ruby': 'rb', 'swift': 'swift', 'go': 'go', 'golang': 'go',
+          'scala': 'scala', 'kotlin': 'kt', 'rust': 'rs', 'php': 'php',
+          'erlang': 'erl', 'elixir': 'ex', 'dart': 'dart'
+        };
+        return map[lang] || lang || 'cpp';
+      }
+    }
+  } catch (e) {}
+  return 'cpp';
+}

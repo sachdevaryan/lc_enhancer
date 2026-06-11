@@ -27,122 +27,140 @@ export async function initNotes(slug) {
     #ls-notes-area {
       width: 100%;
       height: 220px;
-      background: rgba(0,0,0,0.4);
-      color: #c8d6e5;
-      border: 1px solid rgba(0,212,255,0.12);
-      border-radius: 8px;
-      padding: 10px 12px;
+      background: #23242a;
+      color: #f4f4f5;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 14px 16px;
       font-size: 12px;
       font-family: 'JetBrains Mono', monospace;
       resize: none;
       outline: none;
       line-height: 1.7;
       box-sizing: border-box;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s ease;
+      scrollbar-width: thin;
     }
-    #ls-notes-area:focus { border-color: rgba(0,212,255,0.4); }
-    #ls-notes-area::placeholder { color: rgba(0,212,255,0.2); }
+    #ls-notes-area:focus { border-color: rgba(255,255,255,0.2); }
+    #ls-notes-area::placeholder { color: #a1a1aa; opacity: 0.7; }
+    #ls-notes-area::-webkit-scrollbar { width: 5px; }
+    #ls-notes-area::-webkit-scrollbar-track { background: transparent; }
+    #ls-notes-area::-webkit-scrollbar-thumb { background: #3d414c; border-radius: 100px; }
+    #ls-notes-area::-webkit-scrollbar-thumb:hover { background: #505565; }
 
     #ls-notes-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 6px 2px 0;
+      padding: 8px 4px 0;
       font-size: 11px;
-      font-family: 'JetBrains Mono', monospace;
-      color: rgba(0,212,255,0.3);
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      color: #a1a1aa;
     }
-    #ls-notes-status.saving { color: #FFB000; }
-    #ls-notes-status.saved  { color: rgba(0,212,255,0.5); }
+    #ls-notes-status.saving { color: #F59E0B; }
+    #ls-notes-status.saved  { color: rgba(161,161,170,0.7); }
 
     #ls-notes-export {
-      background: none;
-      border: none;
-      color: rgba(0,212,255,0.35);
-      font-size: 11px;
-      font-family: 'JetBrains Mono', monospace;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #a1a1aa;
+      font-size: 10px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
       cursor: pointer;
-      padding: 0;
-      transition: color 0.15s;
+      padding: 4px 10px;
+      border-radius: 10px;
+      transition: 0.2s ease;
     }
-    #ls-notes-export:hover { color: #00D4FF; }
+    #ls-notes-export:hover {
+      color: #f4f4f5;
+      background: #31343d;
+      transform: scale(1.02);
+    }
+    #ls-notes-export:active { transform: scale(0.98); }
 
     #ls-tags-section {
-      margin-top: 12px;
-      padding-top: 10px;
-      border-top: 1px solid rgba(0,212,255,0.07);
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.06);
     }
     #ls-tags-label {
-      font-size: 9px;
-      font-family: 'JetBrains Mono', monospace;
-      color: rgba(200,214,229,0.25);
-      letter-spacing: 0.8px;
-      margin-bottom: 8px;
+      font-size: 11px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      color: #a1a1aa;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.7;
+      margin-bottom: 12px;
     }
     #ls-tags-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
-      margin-bottom: 8px;
+      gap: 8px;
+      margin-bottom: 12px;
       min-height: 8px;
     }
     .ls-tag-chip {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 3px 8px;
-      border-radius: 4px;
       font-size: 10px;
-      font-family: 'JetBrains Mono', monospace;
-      background: rgba(0,212,255,0.08);
-      border: 1px solid rgba(0,212,255,0.2);
-      color: #00D4FF;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(94,161,255,0.15);
+      color: #8db9ff;
     }
     .ls-tag-chip .ls-tag-remove {
       background: none;
       border: none;
-      color: rgba(0,212,255,0.4);
+      color: rgba(141,185,255,0.6);
       cursor: pointer;
-      font-size: 11px;
+      font-size: 12px;
       padding: 0;
       line-height: 1;
-      transition: color 0.15s;
+      transition: 0.2s ease;
     }
-    .ls-tag-chip .ls-tag-remove:hover { color: #FF4B4B; }
+    .ls-tag-chip .ls-tag-remove:hover { color: #8db9ff; }
 
     #ls-tags-add-row {
       display: flex;
-      gap: 5px;
+      gap: 6px;
       align-items: center;
     }
     .ls-tag-custom-input {
-      background: rgba(0,0,0,0.5);
-      border: 1px solid rgba(123,97,255,0.2);
-      color: #c8d6e5;
+      background: #23242a;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #f4f4f5;
       font-size: 10px;
-      font-family: 'JetBrains Mono', monospace;
-      padding: 3px 8px;
-      border-radius: 4px;
+      font-family: 'Inter', sans-serif;
+      padding: 5px 12px;
+      border-radius: 14px;
       outline: none;
       flex: 1;
+      transition: 0.2s ease;
     }
-    .ls-tag-custom-input:focus { border-color: rgba(123,97,255,0.5); }
+    .ls-tag-custom-input:focus { border-color: rgba(255,255,255,0.3); }
     .ls-tag-add-save {
-      background: rgba(123,97,255,0.08);
-      border: 1px solid rgba(123,97,255,0.25);
-      color: rgba(123,97,255,0.6);
+      background: #31343d;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #f4f4f5;
       font-size: 10px;
-      font-family: 'JetBrains Mono', monospace;
-      padding: 3px 8px;
-      border-radius: 4px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 14px;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: 0.2s ease;
     }
     .ls-tag-add-save:hover {
-      background: rgba(123,97,255,0.15);
-      border-color: rgba(123,97,255,0.5);
-      color: #7B61FF;
+      background: #393d47;
+      transform: scale(1.02);
     }
+    .ls-tag-add-save:active { transform: scale(0.98); }
   `;
   document.head.appendChild(style);
 

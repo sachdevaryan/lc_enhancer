@@ -13,49 +13,56 @@ export async function initDiffTab(slug) {
       .ls-diff-section {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 16px;
       }
       .ls-diff-selector-label {
-        font-size: 9px;
-        font-family: 'JetBrains Mono', monospace;
-        color: rgba(200,214,229,0.3);
-        letter-spacing: 0.8px;
+        font-size: 11px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        color: #a1a1aa;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        margin-bottom: 4px;
+        opacity: 0.7;
+        margin-bottom: 8px;
       }
       .ls-diff-select {
         width: 100%;
-        background: rgba(0,0,0,0.5);
-        color: #c8d6e5;
-        border: 1px solid rgba(0,212,255,0.2);
-        border-radius: 6px;
-        padding: 7px 10px;
-        font-size: 11px;
-        font-family: 'JetBrains Mono', monospace;
+        background: #23242a;
+        color: #f4f4f5;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 0 18px;
+        height: 48px;
+        font-size: 12px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
         outline: none;
         cursor: pointer;
-        transition: border-color 0.15s;
+        transition: 0.2s ease;
         appearance: none;
         -webkit-appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(0,212,255,0.4)'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.4)'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
-        background-position: right 10px center;
+        background-position: right 18px center;
       }
-      .ls-diff-select:focus { border-color: rgba(0,212,255,0.5); }
+      .ls-diff-select:focus { border-color: rgba(255,255,255,0.2); }
       .ls-diff-select option {
-        background: #080B14;
-        color: #c8d6e5;
+        background: #2b2d35;
+        color: #f4f4f5;
       }
       .ls-diff-compare-btn {
         width: 100%;
         margin-top: 4px;
       }
       .ls-diff-hint {
-        font-size: 10px;
-        color: rgba(200,214,229,0.25);
-        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: #a1a1aa;
+        font-family: 'Inter', sans-serif;
         text-align: center;
-        padding: 4px 0;
+        padding: 10px 16px;
+        background: #2b2d35;
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
       }
     `;
     document.head.appendChild(style);

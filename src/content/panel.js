@@ -7,21 +7,18 @@ import { storage } from '../utils/storage.js';
 export async function injectPanel(slug, title) {
   if (document.getElementById('leetsense-panel')) return;
 
-  // Load JetBrains Mono from Google Fonts
+  // Load fonts
   const font = document.createElement('link');
   font.rel = 'stylesheet';
-  font.href = 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap';
+  font.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap';
   document.head.appendChild(font);
 
   const panel = document.createElement('div');
   panel.id = 'leetsense-panel';
   panel.innerHTML = `
-    <div id="ls-glow-bar"></div>
     <div id="leetsense-header">
       <span id="leetsense-logo">
-        <span id="ls-logo-bracket">[</span>
         <span id="ls-logo-text">LeetSense</span>
-        <span id="ls-logo-bracket">]</span>
       </span>
       <div id="ls-header-right">
         <span id="ls-problem-slug">${slug}</span>
@@ -29,18 +26,10 @@ export async function injectPanel(slug, title) {
       </div>
     </div>
     <div id="leetsense-tabs">
-      <button class="ls-tab active" data-tab="notes">
-        <span class="ls-tab-icon">✦</span> Notes
-      </button>
-      <button class="ls-tab" data-tab="history">
-        <span class="ls-tab-icon">◈</span> History
-      </button>
-      <button class="ls-tab" data-tab="diff">
-        <span class="ls-tab-icon">⟺</span> Diff
-      </button>
-      <button class="ls-tab" data-tab="analysis">
-        <span class="ls-tab-icon">⬡</span> Analysis
-      </button>
+      <button class="ls-tab active" data-tab="notes">Notes</button>
+      <button class="ls-tab" data-tab="history">History</button>
+      <button class="ls-tab" data-tab="diff">Diff</button>
+      <button class="ls-tab" data-tab="analysis">Analysis</button>
     </div>
     <div id="leetsense-body">
       <div id="ls-notes" class="ls-panel-section active"></div>
@@ -60,55 +49,27 @@ export async function injectPanel(slug, title) {
 
   const style = document.createElement('style');
   style.textContent = `
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
-
     #leetsense-panel {
       position: fixed;
       bottom: 24px;
       right: 24px;
       width: 340px;
       height: 500px;
-      background: #080B14;
-      border: 1px solid rgba(0, 212, 255, 0.25);
-      border-radius: 12px;
-      box-shadow:
-        0 0 0 1px rgba(0,212,255,0.05),
-        0 20px 60px rgba(0,0,0,0.7),
-        inset 0 1px 0 rgba(0,212,255,0.1);
+      background: rgba(30,31,37,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
       z-index: 9999;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 13px;
-      color: #c8d6e5;
+      color: #f4f4f5;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      transition: box-shadow 0.3s ease;
       min-width: 320px;
       min-height: 300px;
-    }
-
-    #leetsense-panel:hover {
-      border-color: rgba(0, 212, 255, 0.45);
-      box-shadow:
-        0 0 0 1px rgba(0,212,255,0.1),
-        0 20px 60px rgba(0,0,0,0.8),
-        0 0 30px rgba(0,212,255,0.06),
-        inset 0 1px 0 rgba(0,212,255,0.15);
-    }
-
-    /* Animated top bar */
-    #ls-glow-bar {
-      height: 2px;
-      width: 100%;
-      background: linear-gradient(90deg, #7B61FF, #00D4FF, #7B61FF);
-      background-size: 200% 100%;
-      animation: ls-slide 3s linear infinite;
-      flex-shrink: 0;
-    }
-
-    @keyframes ls-slide {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 200% 0%; }
     }
 
     /* Header */
@@ -116,27 +77,23 @@ export async function injectPanel(slug, title) {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 14px;
-      background: rgba(0,0,0,0.3);
-      border-bottom: 1px solid rgba(0,212,255,0.08);
+      padding: 12px 16px;
+      background: transparent;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 4px 20px rgba(94,161,255,0.15);
       cursor: move;
       user-select: none;
+      z-index: 2;
     }
 
     #leetsense-logo {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 600;
-      font-size: 13px;
-      letter-spacing: 0.5px;
-    }
-
-    #ls-logo-bracket {
-      color: #7B61FF;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0;
     }
 
     #ls-logo-text {
-      color: #00D4FF;
-      margin: 0 2px;
+      color: #f4f4f5;
     }
 
     #ls-header-right {
@@ -146,9 +103,9 @@ export async function injectPanel(slug, title) {
     }
 
     #ls-problem-slug {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      color: rgba(0,212,255,0.45);
+      font-weight: 500;
+      font-size: 11px;
+      color: #a1a1aa;
       max-width: 120px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -157,93 +114,86 @@ export async function injectPanel(slug, title) {
 
     #leetsense-toggle {
       background: none;
-      border: 1px solid rgba(0,212,255,0.2);
-      color: rgba(0,212,255,0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #a1a1aa;
       cursor: pointer;
       font-size: 14px;
-      width: 22px;
-      height: 22px;
-      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       line-height: 1;
-      transition: all 0.15s;
+      transition: 0.2s ease;
       padding: 0;
     }
 
     #leetsense-toggle:hover {
-      background: rgba(0,212,255,0.1);
-      color: #00D4FF;
-      border-color: rgba(0,212,255,0.5);
+      background: #30333b;
+      color: #f4f4f5;
+      border-color: rgba(255,255,255,0.15);
+      transform: scale(1.02);
     }
+    #leetsense-toggle:active { transform: scale(0.98); }
 
     /* Tabs */
     #leetsense-tabs {
       display: flex;
-      border-bottom: 1px solid rgba(0,212,255,0.08);
-      background: rgba(0,0,0,0.2);
-      padding: 6px 8px 0;
-      gap: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: transparent;
+      padding: 8px 10px;
+      gap: 6px;
     }
 
     .ls-tab {
       flex: 1;
-      padding: 6px 4px;
-      background: none;
-      border: 1px solid transparent;
-      border-bottom: none;
-      color: rgba(200,214,229,0.4);
+      padding: 7px 4px;
+      background: transparent;
+      border: none;
+      color: #a1a1aa;
+      opacity: 0.7;
       cursor: pointer;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 500;
-      border-radius: 6px 6px 0 0;
-      transition: all 0.15s;
-      letter-spacing: 0.3px;
+      font-family: 'Inter', sans-serif;
+      border-radius: 10px;
+      transition: 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
-    }
-
-    .ls-tab-icon {
-      font-size: 9px;
-      opacity: 0.7;
     }
 
     .ls-tab:hover {
-      color: rgba(0,212,255,0.7);
-      background: rgba(0,212,255,0.04);
+      background: #343740;
+      opacity: 1;
+      color: #f4f4f5;
     }
 
     .ls-tab.active {
-      color: #00D4FF;
-      background: rgba(0,212,255,0.08);
-      border-color: rgba(0,212,255,0.2);
-      border-bottom: 1px solid #080B14;
-      margin-bottom: -1px;
-    }
-
-    .ls-tab.active .ls-tab-icon {
       opacity: 1;
-      color: #7B61FF;
+      color: #f4f4f5;
+      background: #2f3138;
+      font-weight: 600;
+      transform: translateY(-1px);
     }
 
     /* Body */
     #leetsense-body {
       flex: 1;
       overflow-y: auto;
-      padding: 14px;
+      padding: 16px;
       scrollbar-width: thin;
-      scrollbar-color: rgba(0,212,255,0.2) transparent;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
     }
 
-    #leetsense-body::-webkit-scrollbar { width: 4px; }
+    #leetsense-body::-webkit-scrollbar { width: 5px; }
     #leetsense-body::-webkit-scrollbar-track { background: transparent; }
     #leetsense-body::-webkit-scrollbar-thumb {
-      background: rgba(0,212,255,0.2);
-      border-radius: 2px;
+      background: #3d414c;
+      border-radius: 100px;
     }
+    #leetsense-body::-webkit-scrollbar-thumb:hover { background: #505565; }
 
     .ls-panel-section { display: none; }
     .ls-panel-section.active { display: block; }
@@ -263,54 +213,59 @@ export async function injectPanel(slug, title) {
 
     /* Shared component styles used across features */
     .ls-btn {
-      background: rgba(0,212,255,0.08);
-      border: 1px solid rgba(0,212,255,0.25);
-      color: #00D4FF;
-      padding: 7px 14px;
-      border-radius: 6px;
+      background: #31343d;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #f4f4f5;
+      padding: 8px 14px;
+      border-radius: 14px;
       font-size: 12px;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
       cursor: pointer;
-      transition: all 0.15s;
-      font-family: 'JetBrains Mono', monospace;
-      letter-spacing: 0.3px;
+      transition: 0.2s ease;
     }
 
     .ls-btn:hover {
-      background: rgba(0,212,255,0.15);
-      border-color: rgba(0,212,255,0.5);
-      box-shadow: 0 0 12px rgba(0,212,255,0.15);
+      background: #393d47;
+      transform: scale(1.02);
     }
 
+    .ls-btn:active { transform: scale(0.98); }
+
     .ls-btn:disabled {
-      opacity: 0.4;
+      opacity: 0.5;
       cursor: not-allowed;
-      box-shadow: none;
+      transform: none;
     }
 
     .ls-btn.ls-btn-purple {
-      background: rgba(123,97,255,0.08);
-      border-color: rgba(123,97,255,0.25);
-      color: #7B61FF;
+      /* Maintaining class for JS compatibility, but matching new standard button */
+      background: #31343d;
+      border-color: rgba(255,255,255,0.08);
+      color: #f4f4f5;
     }
 
     .ls-btn.ls-btn-purple:hover {
-      background: rgba(123,97,255,0.15);
-      border-color: rgba(123,97,255,0.5);
-      box-shadow: 0 0 12px rgba(123,97,255,0.15);
+      background: #393d47;
     }
 
     .ls-empty {
       text-align: center;
-      padding: 32px 16px;
-      color: rgba(200,214,229,0.3);
+      padding: 32px 20px;
+      color: #a1a1aa;
       font-size: 12px;
-      line-height: 1.8;
+      line-height: 1.9;
+      font-family: 'Inter', sans-serif;
+      background: #2b2d35;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
     }
 
     .ls-empty-icon {
       font-size: 24px;
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       opacity: 0.4;
     }
 

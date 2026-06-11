@@ -1,5 +1,5 @@
 import { storage } from '../utils/storage.js';
-import { getEditorCode, getProblemSlug } from '../utils/leetcode.js';
+import { getEditorCode, getProblemSlug, getEditorLanguageExtension } from '../utils/leetcode.js';
 import { diffLines } from '../utils/diff.js';
 
 export async function initHistory(slug) {
@@ -18,171 +18,180 @@ async function renderHistory(container, key, slug) {
     style.id = 'ls-history-style';
     style.textContent = `
       .ls-snap-item {
-        background: rgba(0,0,0,0.35);
-        border: 1px solid rgba(123,97,255,0.15);
-        border-radius: 8px;
-        padding: 10px 12px;
-        margin-bottom: 8px;
-        transition: border-color 0.15s;
+        background: #2b2d35;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 18px;
+        padding: 18px;
+        margin-bottom: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+        transition: 0.2s ease;
       }
-      .ls-snap-item:hover { border-color: rgba(123,97,255,0.4); }
+      .ls-snap-item.manual {
+        border-left: 4px solid #5EA1FF;
+      }
+      .ls-snap-item.auto {
+        border-left: 4px solid #9C7CFF;
+      }
+      .ls-snap-item:hover {
+        transform: translateY(-2px);
+      }
       .ls-snap-header {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: 8px;
-        font-family: 'JetBrains Mono', monospace;
+        margin-bottom: 12px;
+        font-family: 'Inter', sans-serif;
         font-size: 11px;
       }
-      .ls-snap-num { color: #7B61FF; font-weight: 600; }
-      .ls-snap-time { color: rgba(200,214,229,0.5); flex: 1; }
+      .ls-snap-num { color: #f4f4f5; font-weight: 700; }
+      .ls-snap-time { color: #a1a1aa; flex: 1; font-weight: 500; }
       .ls-snap-lines {
-        color: rgba(0,212,255,0.4);
-        background: rgba(0,212,255,0.06);
-        padding: 1px 6px;
-        border-radius: 4px;
-        border: 1px solid rgba(0,212,255,0.1);
+        color: #a1a1aa;
+        background: rgba(255,255,255,0.05);
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-weight: 500;
       }
       .ls-snap-expand {
-        background: none;
-        border: 1px solid rgba(0,212,255,0.15);
-        color: rgba(0,212,255,0.5);
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #a1a1aa;
         font-size: 10px;
-        font-family: 'JetBrains Mono', monospace;
-        padding: 2px 7px;
-        border-radius: 4px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 10px;
         cursor: pointer;
-        transition: all 0.15s;
+        transition: 0.2s ease;
       }
       .ls-snap-expand:hover {
-        color: #00D4FF;
-        border-color: rgba(0,212,255,0.4);
+        color: #f4f4f5;
+        background: #31343d;
+        transform: scale(1.02);
       }
+      .ls-snap-expand:active { transform: scale(0.98); }
       .ls-snap-download {
-        background: none;
-        border: 1px solid rgba(0,212,255,0.15);
-        color: rgba(0,212,255,0.5);
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #a1a1aa;
         font-size: 10px;
-        font-family: 'JetBrains Mono', monospace;
-        padding: 2px 7px;
-        border-radius: 4px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 10px;
         cursor: pointer;
-        transition: all 0.15s;
+        transition: 0.2s ease;
       }
       .ls-snap-download:hover {
-        color: #00D4FF;
-        border-color: rgba(0,212,255,0.4);
+        color: #f4f4f5;
+        background: #31343d;
+        transform: scale(1.02);
       }
+      .ls-snap-download:active { transform: scale(0.98); }
       .ls-snap-preview {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
-        color: rgba(200,214,229,0.45);
+        font-size: 11px;
+        color: #a1a1aa;
         margin: 0;
         white-space: pre-wrap;
         word-break: break-all;
-        line-height: 1.5;
-        border-left: 2px solid rgba(123,97,255,0.3);
-        padding-left: 8px;
+        line-height: 1.6;
+        border-left: 2px solid rgba(255,255,255,0.1);
+        padding-left: 12px;
+        background: transparent;
       }
       .ls-snap-full-code {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
-        color: rgba(200,214,229,0.7);
-        margin: 8px 0 0;
+        font-size: 11px;
+        color: #f4f4f5;
+        margin: 12px 0 0;
         white-space: pre-wrap;
         word-break: break-all;
-        line-height: 1.6;
-        border-left: 2px solid rgba(0,212,255,0.3);
-        padding-left: 8px;
+        line-height: 1.7;
+        border-left: 2px solid rgba(255,255,255,0.2);
+        padding-left: 12px;
         max-height: 300px;
         overflow-y: auto;
+        scrollbar-width: thin;
       }
-      .ls-snap-tag {
-        font-size: 9px;
-        font-family: 'JetBrains Mono', monospace;
-        padding: 1px 5px;
-        border-radius: 3px;
-        background: rgba(0,212,255,0.08);
-        color: rgba(0,212,255,0.5);
-        border: 1px solid rgba(0,212,255,0.15);
-      }
-      .ls-snap-tag.auto {
-        background: rgba(123,97,255,0.08);
-        color: rgba(123,97,255,0.6);
-        border-color: rgba(123,97,255,0.2);
-      }
+      .ls-snap-full-code::-webkit-scrollbar { width: 5px; }
+      .ls-snap-full-code::-webkit-scrollbar-track { background: transparent; }
+      .ls-snap-full-code::-webkit-scrollbar-thumb { background: #3d414c; border-radius: 100px; }
+      .ls-snap-full-code::-webkit-scrollbar-thumb:hover { background: #505565; }
       .ls-snap-tags-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 4px;
-        margin-top: 6px;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255,255,255,0.06);
         align-items: center;
       }
       .ls-snap-custom-tag {
         display: inline-flex;
         align-items: center;
-        gap: 3px;
-        font-size: 9px;
-        font-family: 'JetBrains Mono', monospace;
-        padding: 1px 6px;
-        border-radius: 3px;
-        background: rgba(0,212,255,0.08);
-        color: #00D4FF;
-        border: 1px solid rgba(0,212,255,0.2);
+        gap: 4px;
+        font-size: 10px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: rgba(94,161,255,0.15);
+        color: #8db9ff;
       }
       .ls-snap-custom-tag .ls-ctag-remove {
         background: none;
         border: none;
-        color: rgba(0,212,255,0.4);
+        color: rgba(141,185,255,0.6);
         cursor: pointer;
-        font-size: 10px;
+        font-size: 12px;
         padding: 0;
         line-height: 1;
-        transition: color 0.15s;
+        transition: 0.2s ease;
       }
-      .ls-snap-custom-tag .ls-ctag-remove:hover { color: #FF4B4B; }
+      .ls-snap-custom-tag .ls-ctag-remove:hover { color: #8db9ff; }
       .ls-snap-add-tag-btn {
-        background: none;
-        border: 1px dashed rgba(123,97,255,0.3);
-        color: rgba(123,97,255,0.5);
-        font-size: 9px;
-        font-family: 'JetBrains Mono', monospace;
-        padding: 1px 6px;
-        border-radius: 3px;
+        background: transparent;
+        border: 1px dashed rgba(255,255,255,0.15);
+        color: #a1a1aa;
+        font-size: 10px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        padding: 3px 10px;
+        border-radius: 20px;
         cursor: pointer;
-        transition: all 0.15s;
+        transition: 0.2s ease;
       }
       .ls-snap-add-tag-btn:hover {
-        border-color: rgba(123,97,255,0.6);
-        color: #7B61FF;
+        border-color: rgba(255,255,255,0.3);
+        color: #f4f4f5;
       }
       .ls-snap-tag-input {
-        background: rgba(0,0,0,0.5);
-        border: 1px solid rgba(0,212,255,0.3);
-        color: #c8d6e5;
-        font-size: 9px;
-        font-family: 'JetBrains Mono', monospace;
-        padding: 2px 6px;
-        border-radius: 3px;
+        background: #23242a;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #f4f4f5;
+        font-size: 10px;
+        font-family: 'Inter', sans-serif;
+        padding: 4px 10px;
+        border-radius: 14px;
         outline: none;
-        width: 80px;
+        width: 90px;
+        transition: 0.2s ease;
       }
-      .ls-snap-tag-input:focus { border-color: rgba(0,212,255,0.6); }
+      .ls-snap-tag-input:focus { border-color: rgba(255,255,255,0.3); }
       .ls-snap-tag-save {
-        background: rgba(0,212,255,0.1);
-        border: 1px solid rgba(0,212,255,0.25);
-        color: #00D4FF;
-        font-size: 9px;
-        font-family: 'JetBrains Mono', monospace;
-        padding: 1px 5px;
-        border-radius: 3px;
+        background: #31343d;
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #f4f4f5;
+        font-size: 10px;
+        font-family: 'Inter', sans-serif;
+        padding: 4px 10px;
+        border-radius: 14px;
         cursor: pointer;
-        transition: all 0.15s;
+        transition: 0.2s ease;
       }
-      .ls-snap-tag-save:hover {
-        background: rgba(0,212,255,0.2);
-        border-color: rgba(0,212,255,0.5);
-      }
+      .ls-snap-tag-save:hover { background: #393d47; transform: scale(1.02); }
+      .ls-snap-tag-save:active { transform: scale(0.98); }
     `;
     document.head.appendChild(style);
   }
@@ -211,14 +220,11 @@ async function renderHistory(container, key, slug) {
     [...history].reverse().forEach((snap, i) => {
       const realIndex = history.length - 1 - i;
       const div = document.createElement('div');
-      div.className = 'ls-snap-item';
+      div.className = `ls-snap-item ${snap.auto ? 'auto' : 'manual'}`;
 
       const preview = snap.code.slice(0, 120);
       const isTruncated = snap.code.length > 120;
       const lineCount = snap.code.split('\n').length;
-      const tagHtml = snap.auto
-        ? `<span class="ls-snap-tag auto">auto</span>`
-        : `<span class="ls-snap-tag">manual</span>`;
 
       // Build custom tags HTML
       const customTags = snap.tags || [];
@@ -230,7 +236,6 @@ async function renderHistory(container, key, slug) {
         <div class="ls-snap-header">
           <span class="ls-snap-num">#${realIndex + 1}</span>
           <span class="ls-snap-time">${formatTime(snap.timestamp)}</span>
-          ${tagHtml}
           <span class="ls-snap-lines">${lineCount} lines</span>
           <button class="ls-snap-download" title="Download code">⤓</button>
           <button class="ls-snap-expand">expand ↓</button>
@@ -263,7 +268,8 @@ async function renderHistory(container, key, slug) {
         const pad = (n) => String(n).padStart(2, '0');
         const dateStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
         const timeStr = `${pad(d.getHours())}-${pad(d.getMinutes())}`;
-        const filename = `${slug}_${dateStr}_${timeStr}.cpp`;
+        const ext = snap.langExt || 'cpp';
+        const filename = `${slug}_${dateStr}_${timeStr}.${ext}`;
         const blob = new Blob([snap.code], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -348,7 +354,8 @@ async function saveSnapshot(key, code, auto = false) {
   // Avoid duplicates within 5 seconds
   const last = existing[existing.length - 1];
   if (last && Date.now() - last.timestamp < 5000 && last.code === code) return;
-  existing.push({ code, timestamp: Date.now(), auto, tags: [] });
+  const langExt = getEditorLanguageExtension();
+  existing.push({ code, timestamp: Date.now(), auto, tags: [], langExt });
   await storage.set(key, existing);
 
   // Track daily stats for heatmap
@@ -458,95 +465,104 @@ export function showDiffModal(snapA, snapB, indexA, indexB) {
       #ls-diff-modal {
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.75);
+        background: rgba(0,0,0,0.6);
         z-index: 10000;
         display: flex;
         align-items: center;
         justify-content: center;
-        backdrop-filter: blur(4px);
+        backdrop-filter: blur(8px);
       }
       #ls-diff-inner {
         width: 640px;
         max-width: 90vw;
         max-height: 80vh;
-        background: #080B14;
-        border: 1px solid rgba(0,212,255,0.2);
-        border-radius: 12px;
+        background: #23242a;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px;
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 40px rgba(0,212,255,0.05);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
       }
       #ls-diff-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 16px;
-        border-bottom: 1px solid rgba(0,212,255,0.08);
-        background: rgba(0,0,0,0.3);
-        font-family: 'JetBrains Mono', monospace;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        background: transparent;
+        font-family: 'Inter', sans-serif;
         font-size: 13px;
-        font-weight: 600;
-        color: #c8d6e5;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.7;
+        color: #f4f4f5;
       }
       #ls-diff-close {
-        background: none;
-        border: 1px solid rgba(255,75,75,0.2);
-        color: rgba(255,75,75,0.6);
-        font-family: 'JetBrains Mono', monospace;
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #a1a1aa;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
         font-size: 11px;
-        padding: 3px 10px;
-        border-radius: 4px;
+        padding: 5px 14px;
+        border-radius: 10px;
         cursor: pointer;
-        transition: all 0.15s;
+        transition: 0.2s ease;
       }
       #ls-diff-close:hover {
-        background: rgba(255,75,75,0.1);
-        color: #FF4B4B;
-        border-color: rgba(255,75,75,0.5);
+        background: #31343d;
+        color: #f4f4f5;
+        transform: scale(1.02);
       }
+      #ls-diff-close:active { transform: scale(0.98); }
       #ls-diff-stats {
         display: flex;
         gap: 16px;
-        padding: 8px 16px;
-        font-family: 'JetBrains Mono', monospace;
+        padding: 10px 20px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
         font-size: 11px;
-        border-bottom: 1px solid rgba(0,212,255,0.06);
-        background: rgba(0,0,0,0.2);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        background: rgba(0,0,0,0.1);
       }
-      .diff-stat-add { color: #22c55e; }
+      .diff-stat-add { color: #4ADE80; }
       .diff-stat-rem { color: #FF4B4B; }
-      .diff-stat-same { color: rgba(200,214,229,0.3); }
+      .diff-stat-same { color: #a1a1aa; }
       #ls-diff-body {
         overflow-y: auto;
-        padding: 8px 0;
+        padding: 12px 0;
         flex: 1;
         font-family: 'JetBrains Mono', monospace;
         font-size: 11px;
         line-height: 1.6;
+        background: #23242a;
       }
-      #ls-diff-body::-webkit-scrollbar { width: 4px; }
-      #ls-diff-body::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 2px; }
+      #ls-diff-body::-webkit-scrollbar { width: 5px; }
+      #ls-diff-body::-webkit-scrollbar-track { background: transparent; }
+      #ls-diff-body::-webkit-scrollbar-thumb { background: #3d414c; border-radius: 100px; }
+      #ls-diff-body::-webkit-scrollbar-thumb:hover { background: #505565; }
       .diff-same {
-        padding: 1px 16px;
-        color: rgba(200,214,229,0.4);
+        padding: 1px 18px;
+        color: #a1a1aa;
         white-space: pre;
       }
       .diff-added {
-        padding: 1px 16px;
-        background: rgba(34,197,94,0.08);
-        border-left: 3px solid #22c55e;
-        color: #22c55e;
+        padding: 1px 18px;
+        background: rgba(74,222,128,0.08);
+        border-left: 3px solid #4ADE80;
+        color: #4ADE80;
         white-space: pre;
       }
       .diff-removed {
-        padding: 1px 16px;
+        padding: 1px 18px;
         background: rgba(255,75,75,0.08);
         border-left: 3px solid #FF4B4B;
         color: #FF4B4B;
         white-space: pre;
         text-decoration: line-through;
-        opacity: 0.7;
+        opacity: 0.8;
       }
     `;
     document.head.appendChild(style);
