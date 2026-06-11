@@ -15,7 +15,10 @@ export async function initNotes(slug) {
     <div id="ls-tags-section">
       <div id="ls-tags-label">TAGS</div>
       <div id="ls-tags-list"></div>
-      <div id="ls-tags-presets"></div>
+      <div id="ls-tags-add-row">
+        <input id="ls-tag-input" class="ls-tag-custom-input" placeholder="add tag..." maxlength="30" />
+        <button id="ls-tag-add-btn" class="ls-tag-add-save">+ add</button>
+      </div>
     </div>
   `;
 
@@ -107,30 +110,37 @@ export async function initNotes(slug) {
     }
     .ls-tag-chip .ls-tag-remove:hover { color: #FF4B4B; }
 
-    #ls-tags-presets {
+    #ls-tags-add-row {
       display: flex;
-      flex-wrap: wrap;
       gap: 5px;
+      align-items: center;
     }
-    .ls-preset-tag {
-      padding: 2px 8px;
-      border-radius: 4px;
+    .ls-tag-custom-input {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(123,97,255,0.2);
+      color: #c8d6e5;
       font-size: 10px;
       font-family: 'JetBrains Mono', monospace;
-      background: rgba(123,97,255,0.06);
-      border: 1px solid rgba(123,97,255,0.15);
+      padding: 3px 8px;
+      border-radius: 4px;
+      outline: none;
+      flex: 1;
+    }
+    .ls-tag-custom-input:focus { border-color: rgba(123,97,255,0.5); }
+    .ls-tag-add-save {
+      background: rgba(123,97,255,0.08);
+      border: 1px solid rgba(123,97,255,0.25);
       color: rgba(123,97,255,0.6);
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 3px 8px;
+      border-radius: 4px;
       cursor: pointer;
       transition: all 0.15s;
     }
-    .ls-preset-tag:hover {
+    .ls-tag-add-save:hover {
       background: rgba(123,97,255,0.15);
-      border-color: rgba(123,97,255,0.4);
-      color: #7B61FF;
-    }
-    .ls-preset-tag.active {
-      background: rgba(123,97,255,0.2);
-      border-color: #7B61FF;
+      border-color: rgba(123,97,255,0.5);
       color: #7B61FF;
     }
   `;
@@ -168,14 +178,12 @@ export async function initNotes(slug) {
     URL.revokeObjectURL(url);
   });
 
-  // Tags
-  const PRESET_TAGS = ['revisit', 'hard', 'greedy', 'dp', 'graph', 'binary-search', 'sliding-window', 'done'];
+  // Tags — fully custom, no presets
   const tagsKey = `tags:${slug}`;
 
   async function renderTags() {
     const current = (await storage.get(tagsKey)) || [];
     const list = document.getElementById('ls-tags-list');
-    const presets = document.getElementById('ls-tags-presets');
 
     list.innerHTML = '';
     current.forEach(tag => {
@@ -192,22 +200,27 @@ export async function initNotes(slug) {
       });
       list.appendChild(chip);
     });
-
-    presets.innerHTML = '';
-    PRESET_TAGS.forEach(tag => {
-      const btn = document.createElement('button');
-      btn.className = `ls-preset-tag${current.includes(tag) ? ' active' : ''}`;
-      btn.textContent = `+ ${tag}`;
-      btn.addEventListener('click', async () => {
-        const existing = (await storage.get(tagsKey)) || [];
-        if (existing.includes(tag)) return;
-        existing.push(tag);
-        await storage.set(tagsKey, existing);
-        renderTags();
-      });
-      presets.appendChild(btn);
-    });
   }
+
+  // Add tag handler
+  const tagInput = document.getElementById('ls-tag-input');
+  const tagAddBtn = document.getElementById('ls-tag-add-btn');
+
+  const addTag = async () => {
+    const val = tagInput.value.trim().toLowerCase();
+    if (!val) return;
+    const existing = (await storage.get(tagsKey)) || [];
+    if (existing.includes(val)) { tagInput.value = ''; return; }
+    existing.push(val);
+    await storage.set(tagsKey, existing);
+    tagInput.value = '';
+    renderTags();
+  };
+
+  tagInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') addTag();
+  });
+  tagAddBtn.addEventListener('click', addTag);
 
   renderTags();
 }

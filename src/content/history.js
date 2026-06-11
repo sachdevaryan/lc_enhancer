@@ -58,6 +58,21 @@ async function renderHistory(container, key, slug) {
         color: #00D4FF;
         border-color: rgba(0,212,255,0.4);
       }
+      .ls-snap-download {
+        background: none;
+        border: 1px solid rgba(0,212,255,0.15);
+        color: rgba(0,212,255,0.5);
+        font-size: 10px;
+        font-family: 'JetBrains Mono', monospace;
+        padding: 2px 7px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .ls-snap-download:hover {
+        color: #00D4FF;
+        border-color: rgba(0,212,255,0.4);
+      }
       .ls-snap-preview {
         font-family: 'JetBrains Mono', monospace;
         font-size: 10px;
@@ -96,6 +111,78 @@ async function renderHistory(container, key, slug) {
         color: rgba(123,97,255,0.6);
         border-color: rgba(123,97,255,0.2);
       }
+      .ls-snap-tags-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 6px;
+        align-items: center;
+      }
+      .ls-snap-custom-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 9px;
+        font-family: 'JetBrains Mono', monospace;
+        padding: 1px 6px;
+        border-radius: 3px;
+        background: rgba(0,212,255,0.08);
+        color: #00D4FF;
+        border: 1px solid rgba(0,212,255,0.2);
+      }
+      .ls-snap-custom-tag .ls-ctag-remove {
+        background: none;
+        border: none;
+        color: rgba(0,212,255,0.4);
+        cursor: pointer;
+        font-size: 10px;
+        padding: 0;
+        line-height: 1;
+        transition: color 0.15s;
+      }
+      .ls-snap-custom-tag .ls-ctag-remove:hover { color: #FF4B4B; }
+      .ls-snap-add-tag-btn {
+        background: none;
+        border: 1px dashed rgba(123,97,255,0.3);
+        color: rgba(123,97,255,0.5);
+        font-size: 9px;
+        font-family: 'JetBrains Mono', monospace;
+        padding: 1px 6px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .ls-snap-add-tag-btn:hover {
+        border-color: rgba(123,97,255,0.6);
+        color: #7B61FF;
+      }
+      .ls-snap-tag-input {
+        background: rgba(0,0,0,0.5);
+        border: 1px solid rgba(0,212,255,0.3);
+        color: #c8d6e5;
+        font-size: 9px;
+        font-family: 'JetBrains Mono', monospace;
+        padding: 2px 6px;
+        border-radius: 3px;
+        outline: none;
+        width: 80px;
+      }
+      .ls-snap-tag-input:focus { border-color: rgba(0,212,255,0.6); }
+      .ls-snap-tag-save {
+        background: rgba(0,212,255,0.1);
+        border: 1px solid rgba(0,212,255,0.25);
+        color: #00D4FF;
+        font-size: 9px;
+        font-family: 'JetBrains Mono', monospace;
+        padding: 1px 5px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .ls-snap-tag-save:hover {
+        background: rgba(0,212,255,0.2);
+        border-color: rgba(0,212,255,0.5);
+      }
     `;
     document.head.appendChild(style);
   }
@@ -119,98 +206,127 @@ async function renderHistory(container, key, slug) {
       </div>
     `;
 
-  const list = container.querySelector('#ls-history-list');
-  let selectedForDiff = [];
+    const list = container.querySelector('#ls-history-list');
 
-  [...history].reverse().forEach((snap, i) => {
-    const realIndex = history.length - 1 - i;
-    const div = document.createElement('div');
-    div.className = 'ls-snap-item';
+    [...history].reverse().forEach((snap, i) => {
+      const realIndex = history.length - 1 - i;
+      const div = document.createElement('div');
+      div.className = 'ls-snap-item';
 
-    const preview = snap.code.slice(0, 120);
-    const isTruncated = snap.code.length > 120;
-    const lineCount = snap.code.split('\n').length;
-    const tagHtml = snap.auto
-      ? `<span class="ls-snap-tag auto">auto</span>`
-      : `<span class="ls-snap-tag">manual</span>`;
+      const preview = snap.code.slice(0, 120);
+      const isTruncated = snap.code.length > 120;
+      const lineCount = snap.code.split('\n').length;
+      const tagHtml = snap.auto
+        ? `<span class="ls-snap-tag auto">auto</span>`
+        : `<span class="ls-snap-tag">manual</span>`;
 
-    div.innerHTML = `
-      <div class="ls-snap-header">
-        <input type="checkbox" class="ls-snap-check" data-index="${realIndex}" title="Select for diff">
-        <span class="ls-snap-num">#${realIndex + 1}</span>
-        <span class="ls-snap-time">${formatTime(snap.timestamp)}</span>
-        ${tagHtml}
-        <span class="ls-snap-lines">${lineCount} lines</span>
-        <button class="ls-snap-expand">expand ↓</button>
-      </div>
-      <pre class="ls-snap-preview" id="ls-snap-preview-${realIndex}">${escapeHtml(preview)}${isTruncated ? '...' : ''}</pre>
-      <div id="ls-snap-full-${realIndex}" style="display:none">
-        <pre class="ls-snap-full-code">${escapeHtml(snap.code)}</pre>
-      </div>
-    `;
+      // Build custom tags HTML
+      const customTags = snap.tags || [];
+      const customTagsHtml = customTags.map(t =>
+        `<span class="ls-snap-custom-tag">${escapeHtml(t)}<button class="ls-ctag-remove" data-tag="${escapeHtml(t)}">×</button></span>`
+      ).join('');
 
-    list.appendChild(div);
+      div.innerHTML = `
+        <div class="ls-snap-header">
+          <span class="ls-snap-num">#${realIndex + 1}</span>
+          <span class="ls-snap-time">${formatTime(snap.timestamp)}</span>
+          ${tagHtml}
+          <span class="ls-snap-lines">${lineCount} lines</span>
+          <button class="ls-snap-download" title="Download code">⤓</button>
+          <button class="ls-snap-expand">expand ↓</button>
+        </div>
+        <pre class="ls-snap-preview" id="ls-snap-preview-${realIndex}">${escapeHtml(preview)}${isTruncated ? '...' : ''}</pre>
+        <div id="ls-snap-full-${realIndex}" style="display:none">
+          <pre class="ls-snap-full-code">${escapeHtml(snap.code)}</pre>
+        </div>
+        <div class="ls-snap-tags-row" id="ls-snap-tags-${realIndex}">
+          ${customTagsHtml}
+          <button class="ls-snap-add-tag-btn">+ tag</button>
+        </div>
+      `;
 
-    // Expand/collapse
-    div.querySelector('.ls-snap-expand').addEventListener('click', (e) => {
-      const full = document.getElementById(`ls-snap-full-${realIndex}`);
-      const prev = document.getElementById(`ls-snap-preview-${realIndex}`);
-      const isOpen = full.style.display !== 'none';
-      full.style.display = isOpen ? 'none' : 'block';
-      prev.style.display = isOpen ? 'block' : 'none';
-      e.target.textContent = isOpen ? 'expand ↓' : 'collapse ↑';
+      list.appendChild(div);
+
+      // Expand/collapse
+      div.querySelector('.ls-snap-expand').addEventListener('click', (e) => {
+        const full = document.getElementById(`ls-snap-full-${realIndex}`);
+        const prev = document.getElementById(`ls-snap-preview-${realIndex}`);
+        const isOpen = full.style.display !== 'none';
+        full.style.display = isOpen ? 'none' : 'block';
+        prev.style.display = isOpen ? 'block' : 'none';
+        e.target.textContent = isOpen ? 'expand ↓' : 'collapse ↑';
+      });
+
+      // Download button
+      div.querySelector('.ls-snap-download').addEventListener('click', () => {
+        const d = new Date(snap.timestamp);
+        const pad = (n) => String(n).padStart(2, '0');
+        const dateStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        const timeStr = `${pad(d.getHours())}-${pad(d.getMinutes())}`;
+        const filename = `${slug}_${dateStr}_${timeStr}.cpp`;
+        const blob = new Blob([snap.code], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      // Custom tag: delete
+      div.querySelectorAll('.ls-ctag-remove').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const tagToRemove = btn.dataset.tag;
+          const hist = (await storage.get(key)) || [];
+          if (hist[realIndex]) {
+            hist[realIndex].tags = (hist[realIndex].tags || []).filter(t => t !== tagToRemove);
+            await storage.set(key, hist);
+            await renderHistory(container, key, slug);
+          }
+        });
+      });
+
+      // Custom tag: add
+      const addBtn = div.querySelector('.ls-snap-add-tag-btn');
+      addBtn.addEventListener('click', () => {
+        const tagsRow = document.getElementById(`ls-snap-tags-${realIndex}`);
+        // Prevent multiple inputs
+        if (tagsRow.querySelector('.ls-snap-tag-input')) return;
+
+        const input = document.createElement('input');
+        input.className = 'ls-snap-tag-input';
+        input.placeholder = 'tag...';
+        input.maxLength = 30;
+
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'ls-snap-tag-save';
+        saveBtn.textContent = '✓';
+
+        const saveTag = async () => {
+          const val = input.value.trim().toLowerCase();
+          if (!val) { input.remove(); saveBtn.remove(); return; }
+          const hist = (await storage.get(key)) || [];
+          if (hist[realIndex]) {
+            if (!hist[realIndex].tags) hist[realIndex].tags = [];
+            if (!hist[realIndex].tags.includes(val)) {
+              hist[realIndex].tags.push(val);
+              await storage.set(key, hist);
+            }
+            await renderHistory(container, key, slug);
+          }
+        };
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') saveTag();
+          if (e.key === 'Escape') { input.remove(); saveBtn.remove(); }
+        });
+        saveBtn.addEventListener('click', saveTag);
+
+        tagsRow.insertBefore(input, addBtn);
+        tagsRow.insertBefore(saveBtn, addBtn);
+        input.focus();
+      });
     });
-
-    // Diff checkbox
-    div.querySelector('.ls-snap-check').addEventListener('change', (e) => {
-      const idx = parseInt(e.target.dataset.index);
-      if (e.target.checked) {
-        if (selectedForDiff.length >= 2) {
-          e.target.checked = false;
-          return;
-        }
-        selectedForDiff.push(idx);
-      } else {
-        selectedForDiff = selectedForDiff.filter(x => x !== idx);
-      }
-
-      const diffBtn = document.getElementById('ls-diff-btn');
-      if (diffBtn) {
-        diffBtn.style.display = selectedForDiff.length === 2 ? 'inline-flex' : 'none';
-      }
-    });
-  });
-
-  // Add diff button after list (hidden until 2 selected)
-  list.insertAdjacentHTML('afterend', `
-    <div style="text-align:center; margin-top:8px">
-      <button class="ls-btn" id="ls-diff-btn" style="display:none; width:100%">
-        ⟺ diff selected snapshots
-      </button>
-    </div>
-  `);
-
-  // Add checkbox style
-  const checkStyle = document.createElement('style');
-  if (!document.getElementById('ls-check-style')) {
-    checkStyle.id = 'ls-check-style';
-    checkStyle.textContent = `
-      .ls-snap-check {
-        accent-color: #7B61FF;
-        width: 12px;
-        height: 12px;
-        cursor: pointer;
-        flex-shrink: 0;
-      }
-    `;
-    document.head.appendChild(checkStyle);
-  }
-
-  document.getElementById('ls-diff-btn')?.addEventListener('click', () => {
-    if (selectedForDiff.length !== 2) return;
-    const [a, b] = selectedForDiff.sort((x, y) => x - y);
-    showDiffModal(history[a], history[b], a, b);
-  });
   }
 
   // Manual snap button
@@ -232,7 +348,7 @@ async function saveSnapshot(key, code, auto = false) {
   // Avoid duplicates within 5 seconds
   const last = existing[existing.length - 1];
   if (last && Date.now() - last.timestamp < 5000 && last.code === code) return;
-  existing.push({ code, timestamp: Date.now(), auto });
+  existing.push({ code, timestamp: Date.now(), auto, tags: [] });
   await storage.set(key, existing);
 
   // Track daily stats for heatmap
@@ -284,7 +400,7 @@ function setupAutoSnapshot(slug, key, container) {
   }
 }
 
-function formatTime(ts) {
+export function formatTime(ts) {
   const d = new Date(ts);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     + ' · ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });

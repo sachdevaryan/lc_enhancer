@@ -1,8 +1,10 @@
 import { initNotes } from './notes.js';
 import { initHistory } from './history.js';
 import { initAnalysis } from './analysis.js';
+import { initDiffTab } from './diffTab.js';
+import { storage } from '../utils/storage.js';
 
-export function injectPanel(slug, title) {
+export async function injectPanel(slug, title) {
   if (document.getElementById('leetsense-panel')) return;
 
   // Load JetBrains Mono from Google Fonts
@@ -33,6 +35,9 @@ export function injectPanel(slug, title) {
       <button class="ls-tab" data-tab="history">
         <span class="ls-tab-icon">◈</span> History
       </button>
+      <button class="ls-tab" data-tab="diff">
+        <span class="ls-tab-icon">⟺</span> Diff
+      </button>
       <button class="ls-tab" data-tab="analysis">
         <span class="ls-tab-icon">⬡</span> Analysis
       </button>
@@ -40,8 +45,17 @@ export function injectPanel(slug, title) {
     <div id="leetsense-body">
       <div id="ls-notes" class="ls-panel-section active"></div>
       <div id="ls-history" class="ls-panel-section"></div>
+      <div id="ls-diff" class="ls-panel-section"></div>
       <div id="ls-analysis" class="ls-panel-section"></div>
     </div>
+    <div id="ls-resize-handle-n" class="ls-resize-handle" data-dir="n"></div>
+    <div id="ls-resize-handle-s" class="ls-resize-handle" data-dir="s"></div>
+    <div id="ls-resize-handle-e" class="ls-resize-handle" data-dir="e"></div>
+    <div id="ls-resize-handle-w" class="ls-resize-handle" data-dir="w"></div>
+    <div id="ls-resize-handle-ne" class="ls-resize-handle" data-dir="ne"></div>
+    <div id="ls-resize-handle-nw" class="ls-resize-handle" data-dir="nw"></div>
+    <div id="ls-resize-handle-se" class="ls-resize-handle" data-dir="se"></div>
+    <div id="ls-resize-handle-sw" class="ls-resize-handle" data-dir="sw"></div>
   `;
 
   const style = document.createElement('style');
@@ -53,7 +67,7 @@ export function injectPanel(slug, title) {
       bottom: 24px;
       right: 24px;
       width: 340px;
-      max-height: 500px;
+      height: 500px;
       background: #080B14;
       border: 1px solid rgba(0, 212, 255, 0.25);
       border-radius: 12px;
@@ -69,6 +83,8 @@ export function injectPanel(slug, title) {
       flex-direction: column;
       overflow: hidden;
       transition: box-shadow 0.3s ease;
+      min-width: 320px;
+      min-height: 300px;
     }
 
     #leetsense-panel:hover {
@@ -233,8 +249,15 @@ export function injectPanel(slug, title) {
     .ls-panel-section.active { display: block; }
 
     /* Collapsed state */
+    #leetsense-panel.collapsed {
+      height: auto !important;
+      min-height: auto;
+    }
     #leetsense-panel.collapsed #leetsense-body,
     #leetsense-panel.collapsed #leetsense-tabs {
+      display: none;
+    }
+    #leetsense-panel.collapsed .ls-resize-handle {
       display: none;
     }
 
@@ -304,10 +327,54 @@ export function injectPanel(slug, title) {
     .ls-tag-easy { background: rgba(0,212,255,0.1); color: #00D4FF; border: 1px solid rgba(0,212,255,0.2); }
     .ls-tag-medium { background: rgba(255,176,0,0.1); color: #FFB000; border: 1px solid rgba(255,176,0,0.2); }
     .ls-tag-hard { background: rgba(255,75,75,0.1); color: #FF4B4B; border: 1px solid rgba(255,75,75,0.2); }
+
+    /* Resize handles */
+    .ls-resize-handle {
+      position: absolute;
+      z-index: 10;
+    }
+    .ls-resize-handle[data-dir="n"] {
+      top: -3px; left: 12px; right: 12px; height: 6px;
+      cursor: n-resize;
+    }
+    .ls-resize-handle[data-dir="s"] {
+      bottom: -3px; left: 12px; right: 12px; height: 6px;
+      cursor: s-resize;
+    }
+    .ls-resize-handle[data-dir="e"] {
+      right: -3px; top: 12px; bottom: 12px; width: 6px;
+      cursor: e-resize;
+    }
+    .ls-resize-handle[data-dir="w"] {
+      left: -3px; top: 12px; bottom: 12px; width: 6px;
+      cursor: w-resize;
+    }
+    .ls-resize-handle[data-dir="ne"] {
+      top: -3px; right: -3px; width: 14px; height: 14px;
+      cursor: ne-resize;
+    }
+    .ls-resize-handle[data-dir="nw"] {
+      top: -3px; left: -3px; width: 14px; height: 14px;
+      cursor: nw-resize;
+    }
+    .ls-resize-handle[data-dir="se"] {
+      bottom: -3px; right: -3px; width: 14px; height: 14px;
+      cursor: se-resize;
+    }
+    .ls-resize-handle[data-dir="sw"] {
+      bottom: -3px; left: -3px; width: 14px; height: 14px;
+      cursor: sw-resize;
+    }
   `;
 
   document.head.appendChild(style);
   document.body.appendChild(panel);
+
+  // Restore saved dimensions
+  const savedWidth = await storage.get('ls_panel_width');
+  const savedHeight = await storage.get('ls_panel_height');
+  if (savedWidth) panel.style.width = `${savedWidth}px`;
+  if (savedHeight) panel.style.height = `${savedHeight}px`;
 
   // Tab switching
   panel.querySelectorAll('.ls-tab').forEach(tab => {
@@ -320,7 +387,15 @@ export function injectPanel(slug, title) {
   });
 
   // Collapse toggle
+  let lastPanelHeight = null;
   document.getElementById('leetsense-toggle').addEventListener('click', () => {
+    const isCollapsing = !panel.classList.contains('collapsed');
+    if (isCollapsing) {
+      lastPanelHeight = panel.style.height;
+      panel.style.height = '';
+    } else {
+      if (lastPanelHeight) panel.style.height = lastPanelHeight;
+    }
     panel.classList.toggle('collapsed');
     document.getElementById('leetsense-toggle').textContent =
       panel.classList.contains('collapsed') ? '+' : '−';
@@ -329,9 +404,13 @@ export function injectPanel(slug, title) {
   // Draggable
   makeDraggable(panel, document.getElementById('leetsense-header'));
 
+  // Resizable
+  makeResizable(panel);
+
   // Init features
   initNotes(slug);
   initHistory(slug);
+  initDiffTab(slug);
   initAnalysis(slug);
 }
 
@@ -353,4 +432,88 @@ function makeDraggable(panel, handle) {
   });
 
   document.addEventListener('mouseup', () => isDragging = false);
+}
+
+function makeResizable(panel) {
+  const MIN_W = 320;
+  const MIN_H = 300;
+  let isResizing = false;
+  let resizeDir = '';
+  let startX, startY, startW, startH, startRight, startBottom;
+  let saveTimer = null;
+
+  panel.querySelectorAll('.ls-resize-handle').forEach(handle => {
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      isResizing = true;
+      resizeDir = handle.dataset.dir;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = panel.getBoundingClientRect();
+      startW = rect.width;
+      startH = rect.height;
+      startRight = parseInt(getComputedStyle(panel).right) || 24;
+      startBottom = parseInt(getComputedStyle(panel).bottom) || 24;
+      document.body.style.cursor = getComputedStyle(handle).cursor;
+      document.body.style.userSelect = 'none';
+    });
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const maxW = window.innerWidth - 20;
+    const maxH = window.innerHeight - 20;
+
+    let newW = startW;
+    let newH = startH;
+    let newRight = startRight;
+    let newBottom = startBottom;
+
+    if (resizeDir.includes('e')) {
+      newW = Math.min(maxW, Math.max(MIN_W, startW + dx));
+      newRight = startRight - dx;
+    }
+    if (resizeDir.includes('w')) {
+      newW = Math.min(maxW, Math.max(MIN_W, startW - dx));
+    }
+    if (resizeDir.includes('s')) {
+      newH = Math.min(maxH, Math.max(MIN_H, startH + dy));
+      newBottom = startBottom - dy;
+    }
+    if (resizeDir.includes('n')) {
+      newH = Math.min(maxH, Math.max(MIN_H, startH - dy));
+    }
+
+    // Clamp right/bottom so panel doesn't go off-screen
+    if (newRight < 0) newRight = 0;
+    if (newBottom < 0) newBottom = 0;
+
+    panel.style.width = `${newW}px`;
+    panel.style.height = `${newH}px`;
+
+    if (resizeDir.includes('e')) {
+      panel.style.right = `${newRight}px`;
+    }
+    if (resizeDir.includes('s')) {
+      panel.style.bottom = `${newBottom}px`;
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!isResizing) return;
+    isResizing = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+
+    // Debounce persist dimensions
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const rect = panel.getBoundingClientRect();
+      storage.set('ls_panel_width', Math.round(rect.width));
+      storage.set('ls_panel_height', Math.round(rect.height));
+    }, 300);
+  });
 }
