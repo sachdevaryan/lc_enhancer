@@ -341,21 +341,21 @@ async function renderHistory(container, key, slug) {
       });
     });
 
-    // Manual snap button
-    document.getElementById('ls-snap-btn').addEventListener('click', async () => {
-      const btn = document.getElementById('ls-snap-btn');
-      const code = await getEditorCode();
-      if (!code || !code.trim()) {
-        btn.textContent = '⚠ Editor empty';
-        setTimeout(() => { btn.textContent = '⊕ Save snapshot'; }, 2000);
-        return;
-      }
-      await saveSnapshot(key, code, false);
-      await renderHistory(container, key, slug);
-    });
-
     container.querySelectorAll('.ls-snap-item').forEach(applyParallax);
   }
+
+  // Manual snap button
+  document.getElementById('ls-snap-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('ls-snap-btn');
+    const code = await getEditorCode();
+    if (!code || !code.trim()) {
+      btn.textContent = '⚠ Editor empty';
+      setTimeout(() => { btn.textContent = '⊕ Save snapshot'; }, 2000);
+      return;
+    }
+    await saveSnapshot(key, code, false);
+    await renderHistory(container, key, slug);
+  });
 }
 
 async function saveSnapshot(key, code, auto = false) {
@@ -369,6 +369,10 @@ async function saveSnapshot(key, code, auto = false) {
 
   // Track daily stats for heatmap
   await trackDailyStat();
+
+  // Notify other tabs (like diffTab) that history has updated
+  const slug = key.replace('history:', '');
+  window.dispatchEvent(new CustomEvent('ls_history_updated', { detail: { slug } }));
 }
 
 async function trackDailyStat() {

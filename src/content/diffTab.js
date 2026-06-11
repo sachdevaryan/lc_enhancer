@@ -69,6 +69,12 @@ export async function initDiffTab(slug) {
   }
 
   await renderDiffTab(container, key);
+
+  window.addEventListener('ls_history_updated', (e) => {
+    if (e.detail && e.detail.slug === slug) {
+      renderDiffTab(container, key);
+    }
+  });
 }
 
 async function renderDiffTab(container, key) {
