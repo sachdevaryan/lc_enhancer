@@ -8,6 +8,20 @@ A Chrome extension that enhances LeetCode with persistent notes, solution revisi
 
 ---
 
+## Screenshots
+
+<div align="center">
+  <img src="public/screenshots/panel.png" width="400" alt="LeetSense Main Panel" />
+  <img src="public/screenshots/popup.png" width="400" alt="LeetSense Extension Popup" />
+  <br />
+  <img src="public/screenshots/diff.png" width="400" alt="Side-by-side Diff View" />
+  <img src="public/screenshots/analysis.png" width="400" alt="AI Complexity Analysis" />
+</div>
+
+> **Note:** Add your actual screenshot files to the `public/screenshots/` directory with the names `panel.png`, `popup.png`, `diff.png`, and `analysis.png` to have them display here.
+
+---
+
 ## Features
 
 **Notes per problem**

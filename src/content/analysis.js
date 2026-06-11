@@ -1,4 +1,4 @@
-import { getEditorCode } from '../utils/leetcode.js';
+import { getEditorCode, applyParallax } from '../utils/leetcode.js';
 
 export function initAnalysis(slug) {
   const container = document.getElementById('ls-analysis');
@@ -30,10 +30,16 @@ export function initAnalysis(slug) {
       padding: 20px;
       margin-bottom: 12px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-      transition: 0.2s ease;
+      transition: transform .18s ease, box-shadow .18s ease;
+      will-change: transform;
     }
     .ls-complexity-box:hover {
-      transform: translateY(-2px);
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+    }
+    .ls-complexity-box:active {
+      transform: translateY(-1px) scale(.99);
+      transition: .12s ease;
     }
     .ls-complexity-row {
       display: flex;
@@ -160,6 +166,8 @@ async function runAnalysis() {
         <div class="ls-complexity-explain">${escapeHtml(explanation)}</div>
       </div>
     `;
+
+    applyParallax(result.querySelector('.ls-complexity-box'));
   } catch (err) {
     result.innerHTML = `<div class="ls-error">⚠ ${err.message}</div>`;
   } finally {

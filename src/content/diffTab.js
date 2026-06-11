@@ -1,5 +1,5 @@
 import { storage } from '../utils/storage.js';
-import { getProblemSlug } from '../utils/leetcode.js';
+import { getProblemSlug, applyParallax } from '../utils/leetcode.js';
 import { showDiffModal, formatTime } from './history.js';
 
 export async function initDiffTab(slug) {
@@ -81,6 +81,7 @@ async function renderDiffTab(container, key) {
         Need at least 2 snapshots<br>to compare diffs.
       </div>
     `;
+    applyParallax(container.querySelector('.ls-empty'));
     return;
   }
 

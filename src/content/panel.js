@@ -260,6 +260,18 @@ export async function injectPanel(slug, title) {
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 18px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      transition: transform .18s ease, box-shadow .18s ease;
+      will-change: transform;
+    }
+
+    .ls-empty:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+    }
+
+    .ls-empty:active {
+      transform: translateY(-1px) scale(.99);
+      transition: .12s ease;
     }
 
     .ls-empty-icon {

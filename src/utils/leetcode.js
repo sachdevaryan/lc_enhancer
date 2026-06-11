@@ -50,3 +50,23 @@ export function getEditorLanguageExtension() {
   } catch (e) {}
   return 'cpp';
 }
+
+export function applyParallax(el) {
+  el.addEventListener('mousemove', (e) => {
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const moveX = ((x - centerX) / centerX) * 4;
+    const moveY = ((y - centerY) / centerY) * 4;
+    
+    el.style.transform = `translate3d(${moveX}px, calc(-4px + ${moveY}px), 0) scale(1.03)`;
+  });
+
+  el.addEventListener('mouseleave', () => {
+    el.style.transform = '';
+  });
+}

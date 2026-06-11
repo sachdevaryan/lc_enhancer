@@ -1,5 +1,5 @@
 import { storage } from '../utils/storage.js';
-import { getEditorCode, getProblemSlug, getEditorLanguageExtension } from '../utils/leetcode.js';
+import { getEditorCode, getProblemSlug, getEditorLanguageExtension, applyParallax } from '../utils/leetcode.js';
 import { diffLines } from '../utils/diff.js';
 
 export async function initHistory(slug) {
@@ -24,7 +24,8 @@ async function renderHistory(container, key, slug) {
         padding: 18px;
         margin-bottom: 12px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-        transition: 0.2s ease;
+        transition: transform .18s ease, box-shadow .18s ease;
+        will-change: transform;
       }
       .ls-snap-item.manual {
         border-left: 4px solid #5EA1FF;
@@ -33,7 +34,12 @@ async function renderHistory(container, key, slug) {
         border-left: 4px solid #9C7CFF;
       }
       .ls-snap-item:hover {
-        transform: translateY(-2px);
+        transform: translateY(-4px) scale(1.03);
+        box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+      }
+      .ls-snap-item:active {
+        transform: translateY(-1px) scale(.99);
+        transition: .12s ease;
       }
       .ls-snap-header {
         display: flex;
@@ -207,6 +213,7 @@ async function renderHistory(container, key, slug) {
         <button class="ls-btn ls-btn-purple" id="ls-snap-btn">⊕ Save snapshot</button>
       </div>
     `;
+    applyParallax(container.querySelector('.ls-empty'));
   } else {
     container.innerHTML = `
       <div id="ls-history-list"></div>
@@ -333,20 +340,22 @@ async function renderHistory(container, key, slug) {
         input.focus();
       });
     });
-  }
 
-  // Manual snap button
-  document.getElementById('ls-snap-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('ls-snap-btn');
-    const code = await getEditorCode();
-    if (!code || !code.trim()) {
-      btn.textContent = '⚠ Editor empty';
-      setTimeout(() => { btn.textContent = '⊕ Save snapshot'; }, 2000);
-      return;
-    }
-    await saveSnapshot(key, code, false);
-    await renderHistory(container, key, slug);
-  });
+    // Manual snap button
+    document.getElementById('ls-snap-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('ls-snap-btn');
+      const code = await getEditorCode();
+      if (!code || !code.trim()) {
+        btn.textContent = '⚠ Editor empty';
+        setTimeout(() => { btn.textContent = '⊕ Save snapshot'; }, 2000);
+        return;
+      }
+      await saveSnapshot(key, code, false);
+      await renderHistory(container, key, slug);
+    });
+
+    container.querySelectorAll('.ls-snap-item').forEach(applyParallax);
+  }
 }
 
 async function saveSnapshot(key, code, auto = false) {
